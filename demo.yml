@@ -1,0 +1,128 @@
+---
+# Basic demo of using Ansible to create a virtual machine on Pouta.csc.fi
+#
+# You'll need to download and source your credentials before this will work:
+#  https://research.csc.fi/pouta-credentials
+#
+- name: Create virtual machine on cPouta
+  hosts: localhost # The OpenStack modules run on your local machine.
+  connection: local
+
+  vars:
+    # These will need changing based on your project
+    demo_key: jenkins_id_rsa
+    demo_sg: CSC
+    demo_security_groups: default,{{ demo_sg }} # don't add spaces here!
+    instance_name: pouta-demo
+
+  tasks:
+    - name: Create a virtual machine
+      register: result
+      os_server:
+        name: "{{ instance_name }}"
+        image: Ubuntu-16.04
+        flavor: standard.tiny
+        key_name: "{{ demo_key }}"
+        security_groups: "{{ demo_security_groups }}"
+        floating_ips:
+          - "{{ floating_ip }}"
+
+    - name: find out the IP address
+      set_fact: ip={{ result.openstack.networks.chipcld[0] }}
+    - name: show the IP address
+      debug: msg={{ ip }}
+    - name: add new host to inventory
+      add_host: name={{ ip }} groups=new
+    - name: clear ssh known_hosts
+      known_hosts: name={{ ip }} state=absent
+      when: result | changed
+
+    - name: Wait for instance to be ready
+      wait_for: host={{ ip }} port=22 search_regex=OpenSSH delay=5
+
+- name: Configure demo host
+  hosts: new
+  remote_user: cloud-user
+  become: yes  # sudo to root
+
+  tasks:
+
+   - name: Add Grafana repository
+     shell: echo "deb https://packagecloud.io/grafana/stable/debian/ jessie main" >> /etc/apt/sources.list
+
+   - name: Add the Package Cloud key
+     shell: curl https://packagecloud.io/gpg.key | sudo apt-key add -
+
+   - name: Update Apt repositories
+     command: apt-get update
+
+   - name: Install Grafana
+     apt:
+       name: grafana
+
+   - name: Disable authentication
+     blockinfile: 
+       dest: /etc/grafana/grafana.ini
+       content: |
+         [auth.anonymous]
+         enabled = true
+
+   - name: Generate admin password
+     lineinfile:
+       path: /etc/grafana/grafana.ini
+       regexp: admin_password
+       line: "admin_password = {{ lookup('password', 'grafana_admin_password.txt chars=ascii_letter,digits') }}"
+
+   - name: Start Grafana
+     service: name=grafana-server state=started enabled=yes
+
+   - name: Install packages
+     apt: name={{item}}
+     with_items: 
+       - influxdb
+       - influxdb-client
+       - bc
+       - iperf
+       - iperf3
+       - dstat
+       - pv
+       - firewalld
+
+   - name: Configure firewalld
+     command: firewall-cmd --permanent --zone=public --add-port=3000/tcp
+
+   - name: Reload firewalld
+     command: firewall-cmd --reload
+
+   - name: Start firewalld
+     service: name=firewalld state=started enabled=yes
+
+   - name: Copy scripts
+     copy: src={{ item }} dest=/home/cloud-user/{{ item }}
+     with_items:
+       - tasks.bash
+       - disk-read.bash
+       - disk-write.bash
+       - net-send.bash
+       - net-receive.bash
+       - datasource.json
+       - dashboard.json
+
+   - name: Create database
+     command: curl -G http://localhost:8086/query --data-urlencode "q=CREATE DATABASE db"
+
+   - name: Add a data source
+     command: "curl -X POST http://admin:{{ lookup('password', 'grafana_admin_password.txt') }}@localhost:3000/api/datasources --data-binary @datasource.json -H \"Content-Type: application/json\""
+
+   - name: Create dashboard
+     command: "curl -v  -X POST http://admin:{{ lookup('password', 'grafana_admin_password.txt') }}@localhost:3000/api/dashboards/db --data-binary @dashboard.json -H \"Content-Type: application/json\""
+
+   - name: Configure readahead
+     command: blockdev --setra 8192 /dev/vda
+
+   - name: Schedule tasks
+     cron:
+       name: "measure throughput"
+       minute: "*/5"
+       hour: "*"
+       job: bash /home/cloud-user/tasks.bash 2>&1 >> /home/cloud-user/cron.log
