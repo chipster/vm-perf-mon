@@ -169,7 +169,7 @@
           },
           "yaxes": [
             {
-              "format": "short",
+              "format": "bytes",
               "logBase": 1,
               "max": null,
               "min": 0,
@@ -271,7 +271,7 @@
           },
           "yaxes": [
             {
-              "format": "short",
+              "format": "bytes",
               "logBase": 1,
               "max": null,
               "min": 0,
@@ -385,7 +385,7 @@
           },
           "yaxes": [
             {
-              "format": "short",
+              "format": "bytes",
               "logBase": 1,
               "max": null,
               "min": 0,
@@ -483,7 +483,7 @@
           },
           "yaxes": [
             {
-              "format": "short",
+              "format": "bytes",
               "label": null,
               "logBase": 1,
               "max": null,
@@ -547,6 +547,6 @@
   },
   "timezone": "browser",
   "title": "cPouta throughput",
-  "version": 1
+  "version": 0
 }
 }
