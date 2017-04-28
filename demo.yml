@@ -164,6 +164,6 @@
    - name: Schedule tasks for every hour
      cron:
        name: "measure throughput hourly"
-       minute: "*"
+       minute: "3"
        hour: "*"
        job: bash /home/cloud-user/tasks-hourly.bash 2>&1 >> /home/cloud-user/cron-hourly.log
