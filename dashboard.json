@@ -44,7 +44,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": 232,
+      "height": 233,
       "panels": [
         {
           "aliasColors": {},
@@ -70,7 +70,7 @@
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
-          "points": true,
+          "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -93,10 +93,10 @@
                   "type": "fill"
                 }
               ],
-              "measurement": "disk-read",
+              "measurement": "disk-read-same-file",
               "policy": "default",
               "query": "SELECT mean(\"value\") FROM \"disk-read\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
-              "refId": "A",
+              "refId": "B",
               "resultFormat": "time_series",
               "select": [
                 [
@@ -130,9 +130,47 @@
                   "type": "fill"
                 }
               ],
-              "hide": true,
+              "measurement": "disk-read-small",
               "policy": "default",
-              "refId": "B",
+              "query": "SELECT mean(\"value\") FROM \"disk-read\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
+              "refId": "C",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
+            },
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "disk-read-old-file",
+              "policy": "default",
+              "query": "SELECT mean(\"value\") FROM \"disk-read\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
+              "refId": "A",
               "resultFormat": "time_series",
               "select": [
                 [
@@ -154,7 +192,7 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Ceph read (B/s)",
+          "title": "Ceph read",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -208,7 +246,7 @@
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
-          "points": true,
+          "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -251,12 +289,49 @@
                 ]
               ],
               "tags": []
+            },
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "disk-write-small",
+              "policy": "default",
+              "query": "SELECT mean(\"value\") FROM \"disk-write\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
+              "refId": "B",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Ceph write (B/s)",
+          "title": "Ceph write",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -322,7 +397,7 @@
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
-          "points": true,
+          "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -370,7 +445,7 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Network send (B/s)",
+          "title": "Network send",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -421,7 +496,7 @@
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
-          "points": true,
+          "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -468,7 +543,7 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Network receive  (B/s)",
+          "title": "Network receive",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -516,7 +591,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -547,6 +622,6 @@
   },
   "timezone": "browser",
   "title": "cPouta throughput",
-  "version": 0
+  "version": 3
 }
 }

@@ -4,7 +4,7 @@
 pushd "$(dirname "$0")"
 
 date
-bash disk-read.bash
+bash disk-read-same-file.bash
 bash disk-write.bash
 bash net-send.bash
 bash net-receive.bash

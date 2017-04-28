@@ -1,9 +1,9 @@
 # test size in megabytes
-size=4000
+size=1000
 timeout=60
-key=disk-write
+key=disk-write-small
 
-file="/mnt/data/disk-write"
+file="/mnt/data/disk-write-small"
 
 date
 echo "Measuring $key"
@@ -23,10 +23,6 @@ else
   echo "Timeout"
   value=0
 fi
-
-time=$(echo "($t1 - $t0) / 10^9" | bc -l)
-bytes=$(echo "$size * 10^6" | bc -l)
-value=$(echo "$bytes / $time" | bc -l)
 
 echo $key $t0 $bytes bytes, $time seconds, $value B/s
 

@@ -39,6 +39,16 @@
 
     - name: Wait for instance to be ready
       wait_for: host={{ ip }} port=22 search_regex=OpenSSH delay=5
+      
+    - name: create a new volume
+      os_volume:
+        state: present
+        size: 300
+        display_name: pouta-demo
+
+    - name: attatch the volume
+      command: openstack server add volume pouta-demo pouta-demo
+      ignore_errors: yes
 
 - name: Configure demo host
   hosts: new
@@ -46,6 +56,15 @@
   become: yes  # sudo to root
 
   tasks:
+  
+   - name: format data disk
+     filesystem: fstype=ext4 opts="-q -F -L data" dev=/dev/vdb
+  
+   - name: create mountpoint  
+     command: mkdir -p /mnt/data
+  
+   - name: mount data disk
+     mount: name=/mnt/data src='LABEL=data' fstype=ext4 state=mounted
 
    - name: Add Grafana repository
      shell: echo "deb https://packagecloud.io/grafana/stable/debian/ jessie main" >> /etc/apt/sources.list
@@ -100,9 +119,14 @@
    - name: Copy scripts
      copy: src={{ item }} dest=/home/cloud-user/{{ item }}
      with_items:
+       - tasks-1min.bash
        - tasks.bash
-       - disk-read.bash
+       - tasks-hourly.bash
+       - disk-read-old-file.bash
+       - disk-read-same-file.bash
+       - disk-read-small.bash
        - disk-write.bash
+       - disk-write-small.bash
        - net-send.bash
        - net-receive.bash
        - datasource.json
@@ -119,10 +143,27 @@
 
    - name: Configure readahead
      command: blockdev --setra 8192 /dev/vda
+     
+   - name: Configure readahead
+     command: blockdev --setra 8192 /dev/vdb
 
-   - name: Schedule tasks
+   - name: Schedule tasks for every 5 minutes
      cron:
        name: "measure throughput"
        minute: "*/5"
        hour: "*"
        job: bash /home/cloud-user/tasks.bash 2>&1 >> /home/cloud-user/cron.log
+       
+   - name: Schedule tasks for every minute
+     cron:
+       name: "measure throughput 1min"
+       minute: "*"
+       hour: "*"
+       job: bash /home/cloud-user/tasks-1min.bash 2>&1 >> /home/cloud-user/cron-1min.log
+       
+   - name: Schedule tasks for every hour
+     cron:
+       name: "measure throughput hourly"
+       minute: "*"
+       hour: "*"
+       job: bash /home/cloud-user/tasks-hourly.bash 2>&1 >> /home/cloud-user/cron-hourly.log
