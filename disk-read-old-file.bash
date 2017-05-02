@@ -1,6 +1,6 @@
 # test size in megabytes
 size=4000
-timeout=60
+timeout=1800
 file_count=70
 key=disk-read-old-file
 
