@@ -44,7 +44,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": 233,
+      "height": 231,
       "panels": [
         {
           "aliasColors": {},
@@ -56,13 +56,14 @@
           "grid": {},
           "id": 1,
           "legend": {
-            "avg": false,
+            "avg": true,
             "current": false,
             "max": false,
             "min": false,
+            "rightSide": true,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 2,
@@ -73,7 +74,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -221,7 +222,19 @@
               "show": true
             }
           ]
-        },
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 230,
+      "panels": [
         {
           "aliasColors": {},
           "bars": false,
@@ -232,13 +245,14 @@
           "grid": {},
           "id": 2,
           "legend": {
-            "avg": false,
+            "avg": true,
             "current": false,
             "max": false,
             "min": false,
+            "rightSide": true,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 2,
@@ -249,7 +263,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -366,12 +380,12 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": false,
-      "title": "Row",
+      "title": "New row",
       "titleSize": "h6"
     },
     {
       "collapse": false,
-      "height": 230,
+      "height": 250,
       "panels": [
         {
           "aliasColors": {},
@@ -383,13 +397,14 @@
           "grid": {},
           "id": 3,
           "legend": {
-            "avg": false,
+            "avg": true,
             "current": false,
             "max": false,
             "min": false,
+            "rightSide": true,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 2,
@@ -400,7 +415,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -474,7 +489,19 @@
               "show": true
             }
           ]
-        },
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 250,
+      "panels": [
         {
           "aliasColors": {},
           "bars": false,
@@ -482,13 +509,14 @@
           "fill": 1,
           "id": 4,
           "legend": {
-            "avg": false,
+            "avg": true,
             "current": false,
             "max": false,
             "min": false,
+            "rightSide": true,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 2,
@@ -499,7 +527,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -580,7 +608,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": false,
-      "title": "New row",
+      "title": "Dashboard Row",
       "titleSize": "h6"
     }
   ],
@@ -622,6 +650,5 @@
   },
   "timezone": "browser",
   "title": "cPouta throughput",
-  "version": 3
-}
-}
+  "version": 5
+}}

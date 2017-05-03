@@ -142,10 +142,10 @@
      command: "curl -v  -X POST http://admin:{{ lookup('password', 'grafana_admin_password.txt') }}@localhost:3000/api/dashboards/db --data-binary @dashboard.json -H \"Content-Type: application/json\""
 
    - name: Configure readahead
-     command: blockdev --setra 8192 /dev/vda
+     command: blockdev --setra 16384 /dev/vda
      
    - name: Configure readahead
-     command: blockdev --setra 8192 /dev/vdb
+     command: blockdev --setra 16384 /dev/vdb
 
    - name: Schedule tasks for every 5 minutes
      cron:
