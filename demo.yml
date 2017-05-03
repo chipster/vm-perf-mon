@@ -119,9 +119,9 @@
    - name: Copy scripts
      copy: src={{ item }} dest=/home/cloud-user/{{ item }}
      with_items:
-       - tasks-1min.bash
+       - tasks-fast.bash
        - tasks.bash
-       - tasks-hourly.bash
+       - tasks-slow.bash
        - disk-read-old-file.bash
        - disk-read-same-file.bash
        - disk-read-small.bash
@@ -142,28 +142,28 @@
      command: "curl -v  -X POST http://admin:{{ lookup('password', 'grafana_admin_password.txt') }}@localhost:3000/api/dashboards/db --data-binary @dashboard.json -H \"Content-Type: application/json\""
 
    - name: Configure readahead
-     command: blockdev --setra 16384 /dev/vda
+     command: blockdev --setra 8192 /dev/vda
      
    - name: Configure readahead
-     command: blockdev --setra 16384 /dev/vdb
+     command: blockdev --setra 262144 /dev/vdb
 
-   - name: Schedule tasks for every 5 minutes
+   - name: Schedule normal tasks
      cron:
        name: "measure throughput"
-       minute: "*/5"
+       minute: "*/10"
        hour: "*"
        job: bash /home/cloud-user/tasks.bash 2>&1 >> /home/cloud-user/cron.log
        
-   - name: Schedule tasks for every minute
+   - name: Schedule fast tasks
      cron:
-       name: "measure throughput 1min"
-       minute: "*"
+       name: "measure throughput fast"
+       minute: "1-59/2"
        hour: "*"
-       job: bash /home/cloud-user/tasks-1min.bash 2>&1 >> /home/cloud-user/cron-1min.log
+       job: bash /home/cloud-user/tasks-fast.bash 2>&1 >> /home/cloud-user/cron-fast.log
        
-   - name: Schedule tasks for every hour
+   - name: Schedule slow tasks
      cron:
-       name: "measure throughput hourly"
-       minute: "3"
+       name: "measure throughput slow"
+       minute: "6-59/30"
        hour: "*"
-       job: bash /home/cloud-user/tasks-hourly.bash 2>&1 >> /home/cloud-user/cron-hourly.log
+       job: bash /home/cloud-user/tasks-slow.bash 2>&1 >> /home/cloud-user/cron-slow.log
