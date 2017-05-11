@@ -1,6 +1,6 @@
 # test size in megabytes
 size=4000
-timeout=60
+timeout=180
 key=disk-write
 
 file="/mnt/data/disk-write"

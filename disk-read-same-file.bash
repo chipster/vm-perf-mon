@@ -1,6 +1,6 @@
 # test size in megabytes
 size=4000
-timeout=60
+timeout=180
 key=disk-read-same-file
 
 file="/mnt/data/disk-read-new"

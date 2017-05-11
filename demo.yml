@@ -123,6 +123,7 @@
        - tasks.bash
        - tasks-slow.bash
        - disk-read-old-file.bash
+       - disk-read-old-file-ra256.bash
        - disk-read-same-file.bash
        - disk-read-small.bash
        - disk-write.bash
@@ -164,6 +165,6 @@
    - name: Schedule slow tasks
      cron:
        name: "measure throughput slow"
-       minute: "6-59/30"
+       minute: "6"
        hour: "*"
        job: bash /home/cloud-user/tasks-slow.bash 2>&1 >> /home/cloud-user/cron-slow.log
