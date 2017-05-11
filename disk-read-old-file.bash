@@ -2,8 +2,7 @@
 size=4000
 timeout=1800
 file_count=70
-key=disk-read-old-file-ra256
-readahead=256
+key=disk-read-old-file
 
 if [ ! -f /mnt/data/zeros_0 ]; then
   date
@@ -18,13 +17,8 @@ fi
 # try to avoid the OSD page cache by reading from the least recently accessed file
 file=$(ls -u -t /mnt/data/zeros_* | tail -n 1)
 
-
 date
 echo "Measuring $key"
-
-original_readahead=$(blocked --getra /dev/vdb)
-echo "Setting readahead to $readahead"
-blockdev --setra /dev/vdb $readahead
 
 t0=$(date +%s%N) 
 timeout $timeout dd if=$file of=/dev/null bs=1M count=$size 2>&1
@@ -40,9 +34,6 @@ else
   echo "Timeout"
   value=0
 fi
-
-echo "Restore readahead to $original_readahead"
-blockdev --setra /dev/vdb $original_readahead
 
 echo $bytes $time $value
 

@@ -1,24 +1,26 @@
 # test size in megabytes
-size=4000
-timeout=1800
-file_count=70
-key=disk-read-old-file
+size=1
+# timeout fast to limit distraction for other measurements
+timeout=30
+key=disk-read-old-file-ra256
+readahead=256
 
 if [ ! -f /mnt/data/zeros_0 ]; then
-  date
-  for i in $(seq 0 $file_count); do
-  	echo "Generating test file $i"
-    dd if=/dev/zero of=/mnt/data/zeros_$i bs=1M count=$size
-  done
-  echo "Test files ready"
-  ls -lah $file
+  echo "Test files not found"
+  exit 1
 fi
 
-# try to avoid the OSD page cache by reading from the least recently accessed file
+# try to avoid the Ceph caches by reading from the least recently accessed file
 file=$(ls -u -t /mnt/data/zeros_* | tail -n 1)
+
 
 date
 echo "Measuring $key"
+
+original_readahead=$(blockdev --getra /dev/vdb)
+echo "Setting readahead to $readahead"
+blockdev --setra $readahead /dev/vdb
+blockdev --getra /dev/vdb
 
 t0=$(date +%s%N) 
 timeout $timeout dd if=$file of=/dev/null bs=1M count=$size 2>&1
@@ -34,6 +36,10 @@ else
   echo "Timeout"
   value=0
 fi
+
+echo "Restore readahead to $original_readahead"
+blockdev --setra $original_readahead /dev/vdb
+blockdev --getra /dev/vdb
 
 echo $bytes $time $value
 

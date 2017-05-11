@@ -44,7 +44,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": 231,
+      "height": 190,
       "panels": [
         {
           "aliasColors": {},
@@ -188,6 +188,43 @@
                 ]
               ],
               "tags": []
+            },
+            {
+              "dsType": "influxdb",
+              "groupBy": [
+                {
+                  "params": [
+                    "$interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "null"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "disk-read-old-file-ra256",
+              "policy": "default",
+              "query": "SELECT mean(\"value\") FROM \"disk-read\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
+              "refId": "D",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  }
+                ]
+              ],
+              "tags": []
             }
           ],
           "thresholds": [],
@@ -233,7 +270,7 @@
     },
     {
       "collapse": false,
-      "height": 230,
+      "height": 186,
       "panels": [
         {
           "aliasColors": {},
@@ -385,7 +422,7 @@
     },
     {
       "collapse": false,
-      "height": 250,
+      "height": 158,
       "panels": [
         {
           "aliasColors": {},
@@ -500,7 +537,7 @@
     },
     {
       "collapse": false,
-      "height": 250,
+      "height": 161,
       "panels": [
         {
           "aliasColors": {},
@@ -650,5 +687,6 @@
   },
   "timezone": "browser",
   "title": "cPouta throughput",
-  "version": 5
-}}
+  "version": 8
+}
+}
