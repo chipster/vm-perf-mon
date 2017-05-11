@@ -1,5 +1,5 @@
 # test size in megabytes
-size=1
+size=400
 # timeout fast to limit distraction for other measurements
 timeout=30
 key=disk-read-old-file-ra256
