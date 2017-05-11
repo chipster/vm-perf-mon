@@ -14,7 +14,7 @@ if [ ! -f /mnt/data/zeros_0 ]; then
   ls -lah $file
 fi
 
-# try to avoid the OSD page cache by reading from the least recently accessed file
+# try to avoid the Ceph caches by reading from the least recently accessed file
 file=$(ls -u -t /mnt/data/zeros_* | tail -n 1)
 
 date
