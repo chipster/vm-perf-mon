@@ -17,10 +17,10 @@ file=$(ls -u -t /mnt/data/zeros_* | tail -n 1)
 date
 echo "Measuring $key"
 
-original_readahead=$(blockdev --getra /dev/vdb)
+original_readahead=$(/sbin/blockdev --getra /dev/vdb)
 echo "Setting readahead to $readahead"
-blockdev --setra $readahead /dev/vdb
-blockdev --getra /dev/vdb
+/sbin/blockdev --setra $readahead /dev/vdb
+/sbin/blockdev --getra /dev/vdb
 
 t0=$(date +%s%N) 
 timeout $timeout dd if=$file of=/dev/null bs=1M count=$size 2>&1
@@ -38,11 +38,12 @@ else
 fi
 
 echo "Restore readahead to $original_readahead"
-blockdev --setra $original_readahead /dev/vdb
-blockdev --getra /dev/vdb
+/sbin/blockdev --setra $original_readahead /dev/vdb
+/sbin/blockdev --getra /dev/vdb
 
 echo $bytes $time $value
 
 curl -i -XPOST 'http://localhost:8086/write?db=db' --data-binary "$key value=$value $t0"
 
 echo $key $t0 $value
+
