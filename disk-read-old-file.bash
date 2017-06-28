@@ -1,7 +1,7 @@
 # test size in megabytes
 size=4000
 timeout=1800
-file_count=70
+file_count=60
 key=disk-read-old-file
 
 if [ ! -f /mnt/data/zeros_0 ]; then
