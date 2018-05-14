@@ -9,4 +9,6 @@ bash disk-write.bash
 bash net-send.bash
 bash net-receive.bash
 
+pushd java/vm-perf-mon/bin/; ./vm-perf-mon ../conf.yaml; popd
+
 popd 

@@ -1,0 +1,41 @@
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'eclipse'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs "."
+    }
+}
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+mainClassName = "fi.csc.chipster.benchmark.S3Benchmark"
+
+
+sourceSets {
+  main {
+    resources {
+    }
+  }
+}
+
+run {
+    standardInput = System.in
+}
+
+
+test {
+}
+
+
+dependencies {
+    compile "com.amazonaws:aws-java-sdk-s3:+"
+    compile "com.esotericsoftware.yamlbeans:yamlbeans:+"
+    compile "commons-io:commons-io:+"
+    compile "org.glassfish.jersey.core:jersey-client:+"
+    compile "org.glassfish.jersey.inject:jersey-hk2:+"
+}
