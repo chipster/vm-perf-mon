@@ -1,0 +1,11 @@
+bucket-name: 
+big-file-size: 1600000000
+mid-file-size: 400000000
+multipart-part-size: 400000000
+threads: 4
+s3-access-key: 
+s3-secret-key: 
+upload-serial-count: 3
+small-file-size: 4000
+dummy-read-size: 500000000
+influx-url: http://localhost:8086/write?db=db
