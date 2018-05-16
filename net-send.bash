@@ -6,7 +6,7 @@ echo "Measuring $key"
 t0=$(date +%s%N)
 
 #value=$(iperf -c iperf.funet.fi --reportstyle c | cut -d "," -f 9)
-iperf_output=$(iperf3 -c iperf.funet.fi --time 1 --json)
+iperf_output=$(timeout 3 iperf3 -c iperf.funet.fi --time 1 --json)
 
 echo "$iperf_output"
 

@@ -1,7 +1,9 @@
 package fi.csc.chipster.benchmark;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,23 +11,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.io.output.NullOutputStream;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClients;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.RequestClientOptions;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -49,8 +51,11 @@ public class S3Benchmark {
 	
 	private long t = System.currentTimeMillis();
 	private String influxDbData = "";
+	
+	private Random rand = new Random();
+	private byte[] randData;
 
-	public S3Benchmark(HashMap<String, String> conf) throws AmazonClientException, InterruptedException, IOException {
+	public S3Benchmark(HashMap<String, String> conf) throws AmazonClientException, InterruptedException, IOException {		
 		
 		String bucketName = conf.get("bucket-name");
 		long midFileSize = Long.parseLong(conf.get("mid-file-size"));
@@ -64,7 +69,7 @@ public class S3Benchmark {
 		int nSerial = Integer.parseInt(conf.get("upload-serial-count"));
 		long smallFileSize = Long.parseLong(conf.get("small-file-size"));
 		long dummyReadSize = Long.parseLong(conf.get("dummy-read-size"));
-		
+				
 		System.out.println("bucketName " + bucketName);
 		System.out.println("bigFileSize " + bigFileSize/1000.0/1000/1000 + "GB");
 		System.out.println("midFileSize " + midFileSize/1000.0/1000 + "MB");
@@ -75,20 +80,41 @@ public class S3Benchmark {
 		System.out.println("smallFileSize " + smallFileSize/1000.0 + "kB");
 		System.out.println("dummyReadSize " + dummyReadSize/1000.0/1000 + "MB");
 		
+		
+		int randSize = 128 * 1024 * 1024;
+		this.randData = new byte[randSize];
+		rand.nextBytes(this.randData);		
+		
+		File file = new File("dummy-mid");
+		IOUtils.copyLarge(getStream(midFileSize), new FileOutputStream(file));				
+		
+		AmazonS3 s3 = getClient(s3AccessKey, s3SecretKey);		
+		
 		report("init", null, null);
-						
+		
 		NullOutputStream os = new NullOutputStream();		
 		IOUtils.copy(getStream(dummyReadSize),  os);
 		report("dummy_stream", dummyReadSize, null);
+						
+		upload(s3, bucketName, getStream(midFileSize), "dummy-mid", midFileSize);
+		report("upload,size=" + midFileSize, midFileSize, null);
+		
+		download(s3, bucketName, "dummy-mid");
+		report("download", midFileSize, null);		
+		
+		uploadMultipartTest(s3, bucketName, "dummy-big-multipart", bigFileSize, multipartPartSize, threads);		
+		report("upload_multipart,size=" + bigFileSize + ",threads=" + threads, bigFileSize, null);
 				
-		AmazonS3 s3 = getClient(s3AccessKey, s3SecretKey);		
 		
-		
-		t = System.currentTimeMillis();
 		for (int i = 0; i < nSerial; i++) {
 			upload(s3, bucketName, getStream(smallFileSize), "dummy-4k-" + i, smallFileSize);
 		}
 		report("upload_4k_serial", smallFileSize * threads, nSerial);
+		
+		for (int i = 0; i < nSerial; i++) {
+			download(s3, bucketName, "dummy-4k-" + i);
+		}
+		report("download_4k_serial", smallFileSize * threads, nSerial);
 		
 
 		ExecutorService pool = Executors.newFixedThreadPool(threads);
@@ -119,33 +145,18 @@ public class S3Benchmark {
 		}
 		pool.shutdown();
 		pool.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);		
-		report("download_4k_parallel,threads=" + threads, smallFileSize * threads, threads);
-		
-		upload(s3, bucketName, getStream(midFileSize), "dummy-mid", midFileSize);
-		report("upload,size=" + midFileSize, midFileSize, null);
-		
-		download(s3, bucketName, "dummy-mid");
-		report("download", midFileSize, null);		
-		
-		uploadMultipartTest(s3, bucketName, "dummy-big-multipart", bigFileSize, multipartPartSize, threads);		
-		report("upload_multipart,size=" + bigFileSize + ",threads=" + threads, bigFileSize, null);
-		
-//		System.out.println("download multipart uploaded");
-//		download(s3, bucketName, "dummy-big");
-//		report("download_multipart_uploaded", bigFileSize, null);
+		report("download_4k_parallel,threads=" + threads, smallFileSize * threads, threads);		
 		
 		System.out.println(influxDbData);
 		
 		if (influxUrl != null) {
-			WebTarget target = ClientBuilder.newClient().target(influxUrl);
-			Response response = target.request()
-					.post(Entity.entity(influxDbData, MediaType.TEXT_PLAIN), Response.class);
-			System.out.println(response.getStatus() + " " + response.readEntity(String.class));
+			HttpUriRequest post = RequestBuilder.post(influxUrl).setEntity(new StringEntity(influxDbData)).build();			
+			System.out.println(HttpClients.createDefault().execute(post).getStatusLine());
 		}
 	}
 	
 	private void report(String task, Long bytes, Integer requests) {
-		long dt = (System.currentTimeMillis() - t);
+		long dt = (System.currentTimeMillis() - t);		
 		System.out.print(task + " " + dt + "ms ");
 		reportToInfluxDb("time", task, "" + dt);
 		
@@ -159,8 +170,9 @@ public class S3Benchmark {
 			float rps = requests * 1000f / dt;
 			System.out.print(rps + " requests/s");
 			reportToInfluxDb("requests_per_second", task, String.format("%.12f", rps));
-		}		
-		System.out.println();				
+		}				
+		System.out.println();
+		t = System.currentTimeMillis();
 	}
 	
 	private void reportToInfluxDb(String type, String task, String value) {
@@ -168,21 +180,24 @@ public class S3Benchmark {
 	}
 
 	private InputStream getStream(long smallFileSize) {
-		return new BufferedInputStream(				
-				new BoundedInputStream(
-				new DummyInputStream(), smallFileSize));
+		return new BoundedInputStream(
+						new DummyInputStream(), 
+				smallFileSize);
 	}
 
 	private AmazonS3 getClient(String access, String secret) {
 
 		AWSCredentials credentials = new BasicAWSCredentials(access, secret);
 
-		ClientConfiguration clientConfig = new ClientConfiguration();
-		clientConfig.withSignerOverride("S3SignerType");
-
+		ClientConfiguration clientConfig = new ClientConfiguration()
+				.withSignerOverride("S3SignerType")
+				.withTcpKeepAlive(true);
+		
+		EndpointConfiguration endpointConf = new EndpointConfiguration("https://object.pouta.csc.fi", "regionOne");
+		
 		AmazonS3 s3 = AmazonS3ClientBuilder.standard()
 				.withClientConfiguration(clientConfig)
-				.withEndpointConfiguration(new EndpointConfiguration("object.pouta.csc.fi", "regionOne"))
+				.withEndpointConfiguration(endpointConf)
 				.withCredentials(new AWSStaticCredentialsProvider(credentials))
 				.build();
 
@@ -191,18 +206,18 @@ public class S3Benchmark {
 	
 	private void upload(AmazonS3 s3, String bucketName, InputStream smallFile, String keyName, long smallFileSize) {
 
-	        //System.out.format("Uploading %s to S3 bucket %s...\n", smallFile, bucketName);
-	        
 	        ObjectMetadata meta = new ObjectMetadata();
 	        meta.setContentLength(smallFileSize);
+	        // required by s3.putObject()
+	        int buffSize = RequestClientOptions.DEFAULT_STREAM_BUFFER_SIZE;
+	        BufferedInputStream is = new BufferedInputStream(smallFile, buffSize); 
 	        
 	        try {
-	            s3.putObject(bucketName, keyName, smallFile, meta);
+	            s3.putObject(bucketName, keyName, is, meta);
 	        } catch (AmazonServiceException e) {
-	            System.err.println(e.getErrorMessage());
+	        	e.printStackTrace();
 	            System.exit(1);
 	        }
-	        //System.out.println("Done!");
 	}
 	
 	private void uploadMultipartTest(AmazonS3 s3Client, String bucketName, String keyName, long contentLength, long partSize, int threads) throws InterruptedException {		 
@@ -288,7 +303,7 @@ public class S3Benchmark {
     public void download(AmazonS3 s3, String bucketName, String keyName) {
     	
     	try {
-    	    S3Object o = s3.getObject(bucketName, keyName);
+    	    S3Object o = s3.getObject(bucketName, keyName);    	    
     	    S3ObjectInputStream s3is = o.getObjectContent();
     	    NullOutputStream fos = new NullOutputStream();    	    
     	    IOUtils.copy(s3is, fos);
@@ -309,38 +324,26 @@ public class S3Benchmark {
     public class DummyInputStream extends InputStream {
 
         private boolean closed = false;
-        private long count = 0;
 
 		@Override
         public int read() throws IOException {
             checkOpen();
-            int result = (int)count++ % 256;
-            if (result < 0) {
-                result = -result;
-            }
-            return result;
+            byte[] array = new byte[1];
+            read(array);
+            return array[0];
         }
 
         @Override
         public int read(byte[] data, int offset, int length) throws IOException {
             checkOpen();
-            byte[] temp = new byte[length];
-            for (int i = 0; i < length; i++) {
-            	temp[i] = (byte) (count++ % 256); 
-            }
-            System.arraycopy(temp, 0, data, offset, length);
+            // read from the random location of the random data array
+            System.arraycopy(randData, rand.nextInt(randData.length - length), data, offset, length);
             return length;
-
         }
 
         @Override
         public int read(byte[] data) throws IOException {
-            checkOpen();
-            for (int i = 0; i < data.length; i++) {
-            	data[i] = (byte) (count++ % 256); 
-            }
-            return data.length;
-
+            return read(data, 0, data.length);
         }
 
         @Override

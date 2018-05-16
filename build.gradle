@@ -36,6 +36,5 @@ dependencies {
     compile "com.amazonaws:aws-java-sdk-s3:+"
     compile "com.esotericsoftware.yamlbeans:yamlbeans:+"
     compile "commons-io:commons-io:+"
-    compile "org.glassfish.jersey.core:jersey-client:+"
-    compile "org.glassfish.jersey.inject:jersey-hk2:+"
+    compile "org.apache.httpcomponents:httpcore:+"
 }
