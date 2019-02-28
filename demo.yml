@@ -106,6 +106,12 @@
        - dstat
        - pv
        - firewalld
+       - jq
+       - python-pip
+       - python-setuptools
+       - s3cmd
+       - openjdk-9-jdk
+       - python-swiftclient
 
    - name: Configure firewalld
      command: firewall-cmd --permanent --zone=public --add-port=3000/tcp
@@ -147,6 +153,12 @@
      
    - name: Configure readahead
      command: blockdev --setra 262144 /dev/vdb
+     
+   - name: Install  yaml parser
+     command: sudo pip install yq
+   
+   - name: Install  aws-cli
+     command: sudo pip install awscli
 
    - name: Schedule normal tasks
      cron:
