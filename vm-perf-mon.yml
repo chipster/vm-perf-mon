@@ -13,52 +13,52 @@
     demo_key: jenkins_id_rsa
     demo_sg: CSC
     demo_security_groups: default,{{ demo_sg }} # don't add spaces here!
-    instance_name: pouta-demo
+    instance_name: pouta-throughput-dashboard2
 
   tasks:
     - name: Create a virtual machine
       register: result
       os_server:
         name: "{{ instance_name }}"
-        image: Ubuntu-16.04
-        flavor: standard.tiny
+        image: Ubuntu-20.04
+        flavor: standard.small
         key_name: "{{ demo_key }}"
         security_groups: "{{ demo_security_groups }}"
         floating_ips:
           - "{{ floating_ip }}"
 
     - name: find out the IP address
-      set_fact: ip={{ result.openstack.networks.chipcld[0] }}
+      set_fact: ip={{ result.openstack.private_v4 }}
     - name: show the IP address
       debug: msg={{ ip }}
     - name: add new host to inventory
       add_host: name={{ ip }} groups=new
     - name: clear ssh known_hosts
       known_hosts: name={{ ip }} state=absent
-      when: result | changed
+      when: result.changed
 
     - name: Wait for instance to be ready
       wait_for: host={{ ip }} port=22 search_regex=OpenSSH delay=5
       
-    - name: create a new volume
-      os_volume:
-        state: present
-        size: 300
-        display_name: pouta-demo
+    # - name: create a new volume
+    #   os_volume:
+    #     state: present
+    #     size: 300
+    #     display_name: pouta-throughput-dashboard
 
     - name: attatch the volume
-      command: openstack server add volume pouta-demo pouta-demo
+      command: openstack server add volume {{ instance_name }} pouta-throughput-dashboard
       ignore_errors: yes
 
 - name: Configure demo host
   hosts: new
-  remote_user: cloud-user
+  remote_user: ubuntu
   become: yes  # sudo to root
 
   tasks:
   
-   - name: format data disk
-     filesystem: fstype=ext4 opts="-q -F -L data" dev=/dev/vdb
+  # - name: format data disk
+  #   filesystem: fstype=ext4 opts="-q -F -L data" dev=/dev/vdb
   
    - name: create mountpoint  
      command: mkdir -p /mnt/data
@@ -67,13 +67,17 @@
      mount: name=/mnt/data src='LABEL=data' fstype=ext4 state=mounted
 
    - name: Add Grafana repository
-     shell: echo "deb https://packagecloud.io/grafana/stable/debian/ jessie main" >> /etc/apt/sources.list
+     shell: echo "deb https://packages.grafana.com/oss/deb stable main" >> /etc/apt/sources.list.d/grafana.list
 
-   - name: Add the Package Cloud key
-     shell: curl https://packagecloud.io/gpg.key | sudo apt-key add -
+   - name: Add the Grafana repository key
+     shell: curl https://packages.grafana.com/gpg.key | sudo apt-key add -
 
    - name: Update Apt repositories
      command: apt-get update
+
+   - name: Install Grafana dependencies
+     apt:
+      name: libfontconfig1
 
    - name: Install Grafana
      apt:
@@ -96,8 +100,9 @@
      service: name=grafana-server state=started enabled=yes
 
    - name: Install packages
-     apt: name={{item}}
-     with_items: 
+     apt: 
+      state: present
+      pkg:     
        - influxdb
        - influxdb-client
        - bc
@@ -107,11 +112,10 @@
        - pv
        - firewalld
        - jq
-       - python-pip
-       - python-setuptools
-       - s3cmd
-       - openjdk-9-jdk
-       - python-swiftclient
+       #- python-setuptools
+       #- s3cmd
+       #- openjdk-9-jdk
+       #- python-swiftclient
 
    - name: Configure firewalld
      command: firewall-cmd --permanent --zone=public --add-port=3000/tcp
@@ -123,7 +127,7 @@
      service: name=firewalld state=started enabled=yes
 
    - name: Copy scripts
-     copy: src={{ item }} dest=/home/cloud-user/{{ item }}
+     copy: src={{ item }} dest=/home/ubuntu/{{ item }}
      with_items:
        - tasks-fast.bash
        - tasks.bash
@@ -139,8 +143,8 @@
        - datasource.json
        - dashboard.json
 
-   - name: Create database
-     command: curl -G http://localhost:8086/query --data-urlencode "q=CREATE DATABASE db"
+#   - name: Create database
+#     command: curl -G http://localhost:8086/query --data-urlencode "q=CREATE DATABASE db"
 
    - name: Add a data source
      command: "curl -X POST http://admin:{{ lookup('password', 'grafana_admin_password.txt') }}@localhost:3000/api/datasources --data-binary @datasource.json -H \"Content-Type: application/json\""
@@ -154,29 +158,29 @@
    - name: Configure readahead
      command: blockdev --setra 262144 /dev/vdb
      
-   - name: Install  yaml parser
-     command: sudo pip install yq
+  #  - name: Install  yaml parser
+  #    command: sudo pip install yq
    
-   - name: Install  aws-cli
-     command: sudo pip install awscli
+#   - name: Install  aws-cli
+#     command: sudo pip install awscli
 
    - name: Schedule normal tasks
      cron:
        name: "measure throughput"
        minute: "*/10"
        hour: "*"
-       job: bash /home/cloud-user/tasks.bash 2>&1 >> /home/cloud-user/cron.log
+       job: bash /home/ubuntu/tasks.bash 2>&1 >> /home/ubuntu/cron.log
        
    - name: Schedule fast tasks
      cron:
        name: "measure throughput fast"
        minute: "1-59/2"
        hour: "*"
-       job: bash /home/cloud-user/tasks-fast.bash 2>&1 >> /home/cloud-user/cron-fast.log
+       job: bash /home/ubuntu/tasks-fast.bash 2>&1 >> /home/ubuntu/cron-fast.log
        
    - name: Schedule slow tasks
      cron:
        name: "measure throughput slow"
        minute: "6"
        hour: "*"
-       job: bash /home/cloud-user/tasks-slow.bash 2>&1 >> /home/cloud-user/cron-slow.log
+       job: bash /home/ubuntu/tasks-slow.bash 2>&1 >> /home/ubuntu/cron-slow.log
