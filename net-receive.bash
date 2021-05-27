@@ -13,6 +13,12 @@ echo "$iperf_output"
 #value=$(echo "$iperf_output" | grep bits_per_second | tail -n 1 | cut -d ":" -f 2 | sed 's/	//g' | sed 's/ //g' | sed 's/e+/\*10\^/' | bc)
 value=$(echo "$iperf_output" | jq .end.sum_received.bits_per_second)
 
+if [ $value == "null" ]; then
+  echo "test failed:"
+  echo $iperf_output | jq .error
+  exit 1
+fi
+
 echo "$value b/s"
 
 value=$(echo "$value / 8" | bc)
