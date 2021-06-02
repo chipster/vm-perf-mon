@@ -2,14 +2,14 @@
 
 set -e
 
-if [ -z $2 ]; then
+if [ -z $3 ]; then
   echo "Usage bash launch-vm.bash INFLUXDB_ADDRESS IMAGE"
   exit 1
 fi
 
 influxdb_ip="$1"
 image="$2"
-flavor="standard.tiny"
+flavor="$3"
 instance_name="vm-launch-test-$image"
 
 timeout=1200
@@ -86,6 +86,6 @@ echo $key,total $t0 $total_time seconds
 influxdb_url="http://localhost:8086/write?db=db"
 
 echo "send results to InfluxDB"
-ssh -i /home/ubuntu/.ssh/id_rsa_jenkins $influxdb_ip curl -s -XPOST $influxdb_url --data-binary \"$key,step=launch,image=$image value=$launch_time $t0\"
-ssh -i /home/ubuntu/.ssh/id_rsa_jenkins $influxdb_ip curl -s -XPOST $influxdb_url --data-binary \"$key,step=boot,image=$image value=$boot_time $t0\"
-ssh -i /home/ubuntu/.ssh/id_rsa_jenkins $influxdb_ip curl -s -XPOST $influxdb_url --data-binary \"$key,step=total,image=$image value=$total_time $t0\"
+ssh -i /home/ubuntu/.ssh/id_rsa_jenkins $influxdb_ip curl -s -XPOST $influxdb_url --data-binary \"$key,step=launch,image=$image,flavor=$flavor value=$launch_time $t0\"
+ssh -i /home/ubuntu/.ssh/id_rsa_jenkins $influxdb_ip curl -s -XPOST $influxdb_url --data-binary \"$key,step=boot,image=$image,flavor=$flavor value=$boot_time $t0\"
+ssh -i /home/ubuntu/.ssh/id_rsa_jenkins $influxdb_ip curl -s -XPOST $influxdb_url --data-binary \"$key,step=total,image=$image,flavor=$flavor value=$total_time $t0\"
